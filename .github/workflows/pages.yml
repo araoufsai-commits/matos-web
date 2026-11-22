@@ -1,0 +1,43 @@
+name: Deploy web app
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build site
+        run: |
+          npm install --no-save jsqr@1.4.0 qrcode-generator@1.4.4 @supabase/supabase-js@2.45.4
+          mkdir site
+          cp index.html config.js manifest.webmanifest site/
+          cp node_modules/jsqr/dist/jsQR.js site/jsqr.js
+          cp node_modules/qrcode-generator/qrcode.js site/qrgen.js
+          cp node_modules/@supabase/supabase-js/dist/umd/*.js site/
+          pip install pillow
+          python3 - <<'EOF'
+          from PIL import Image
+          import glob
+          src = Image.open(glob.glob('resources/*.webp')[0]).convert('RGB')
+          for s in (180, 192, 512):
+              src.resize((s, s), Image.LANCZOS).save(f'site/icon-{s}.png')
+          EOF
+          ls -la site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - uses: actions/deploy-pages@v4
