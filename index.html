@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Matos bstudio.</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#231F20">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Matos">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: outil de plateau, direct, lisible d'une main.
+   IDEA: la feuille de sortie matériel accrochée à la porte du studio.
+   PICTURE: la liste elle-même, avec les trois compteurs en tête.
+   COLOUR AND TYPE: charbon #231F20, rouge bstudio #EC2024, Montserrat.
+   LAYOUT: une colonne mobile, barre d'onglets en bas. */
+:root{color-scheme:light dark;--bg:light-dark(#F1EEEC,#1B1819);--card:light-dark(#fff,#2A2627);--ink:light-dark(#231F20,#F1EEEC);--mut:light-dark(#6b6566,#a8a2a3);--line:light-dark(#dedad8,#3a3536);--red:#EC2024;--ok:light-dark(#1d7a46,#5fd08f)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 16px/1.45 Montserrat,system-ui,sans-serif;overflow-x:clip;padding-bottom:150px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;touch-action:manipulation}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+header{background:#231F20;color:#F1EEEC;padding:18px 16px 14px}
+h1{margin:0;font-size:26px;font-weight:700;line-height:1.05}h1 i{color:var(--red);font-style:normal}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.stats button{background:#2f2a2b;border-radius:12px;padding:10px 12px;text-align:left;color:#F1EEEC}
+.stats b{display:block;font-size:28px;line-height:1.1;font-weight:700}.stats span{font-size:13px;color:#b9b3b4}
+.stats .warn b{color:#ff6b6e}
+#alert{display:block;width:100%;margin-top:10px;background:var(--red);color:#fff;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:700;text-align:left}
+main{max-width:720px;margin:auto;padding:12px 12px 0}
+.tools{display:flex;gap:8px;margin-bottom:8px}
+.tools input{flex:1;height:46px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:0 14px;font-size:16px}
+.btn{height:46px;padding:0 16px;border-radius:12px;background:var(--red);color:#fff;font-weight:700;white-space:nowrap}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--ink);font-weight:600}
+.scan{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer}.scan input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}.scan:focus-within{outline:3px solid var(--ink);outline-offset:2px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.chips button{flex:none;height:38px;padding:0 13px;border-radius:19px;border:1px solid var(--line);font-size:14px;background:var(--card)}
+.chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chips .kit{border-color:var(--red);color:var(--red);font-weight:600}.chips .lbl{flex:none;align-self:center;font-size:13px;color:var(--mut);padding-right:2px}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.row{display:flex;background:var(--card);border-radius:14px;border:1px solid var(--line);overflow:hidden;content-visibility:auto;contain-intrinsic-size:auto 62px}
+.row.on{border-color:var(--red);background:light-dark(#fff1f1,#3a2224)}
+.row .main{flex:1;text-align:left;padding:10px 12px;display:flex;gap:12px;align-items:center}
+.ck{flex:none;width:26px;height:26px;border-radius:8px;border:2px solid var(--line);display:grid;place-items:center;font-size:16px;font-weight:700;color:#fff}
+.row.on .ck{background:var(--red);border-color:var(--red)}.ck.out{border-color:var(--red);color:var(--red);font-size:14px}.ck.no{border-style:dashed}
+.tx{display:grid;gap:1px}.row b{font-weight:600}.sub{font-size:13px;color:var(--mut)}
+.sub .o{color:var(--red);font-weight:600}.sub .g{color:var(--ok);font-weight:600}
+.tag{display:inline-block;font-size:12px;font-weight:700;color:#fff;background:var(--red);border-radius:6px;padding:1px 7px;margin-left:6px;vertical-align:2px}
+.row .more{width:48px;font-size:22px;border-left:1px solid var(--line);color:var(--mut)}
+h2{font-size:14px;font-weight:700;margin:16px 2px 6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+h2 button{font-size:13px;font-weight:700;color:var(--red);height:38px;padding:0 8px}
+.ret{padding:0 14px;font-size:14px;font-weight:700;color:var(--red);border-left:1px solid var(--line);white-space:nowrap}
+.empty{padding:36px 12px;text-align:center;color:var(--mut)}
+.log li{background:var(--card);border-radius:10px;padding:9px 12px;font-size:14px}.log time{display:block;font-size:13px;color:var(--mut)}
+nav{position:fixed;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#231F20;z-index:3}
+nav button{height:62px;color:#b9b3b4;font-size:13px;font-weight:600}
+nav button.on{color:#fff;box-shadow:inset 0 3px 0 var(--red)}
+#bar{position:fixed;bottom:62px;left:0;right:0;z-index:3;display:flex;gap:8px;padding:10px 12px;background:var(--bg);border-top:1px solid var(--line)}
+#bar .go{flex:1}
+[hidden]{display:none!important}
+#ov{position:fixed;inset:0;z-index:5;background:#0009;display:flex;align-items:flex-end;justify-content:center}
+#sheet{background:var(--bg);width:100%;max-width:720px;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:18px 16px 22px;display:grid;gap:12px}
+#sheet h3{margin:0;font-size:20px;font-weight:700}
+label.f{display:grid;gap:4px;font-size:13px;color:var(--mut)}
+label.f input,label.f select,label.f textarea,textarea.msg{height:46px;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:0 12px;font-size:16px;color:var(--ink);width:100%}
+label.f textarea{height:76px;padding:10px 12px;resize:vertical}textarea.msg{height:150px;padding:10px 12px;font-size:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pick{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--card);border-radius:10px;padding:8px 12px;font-size:15px}
+.pick input{width:72px;height:40px;border:1px solid var(--line);border-radius:8px;background:var(--bg);text-align:center;font-size:16px}
+.pick .btn{height:40px;flex:none}
+.acts{display:flex;gap:8px;flex-wrap:wrap}.acts .btn{flex:1}
+.del{color:var(--red);font-weight:600;height:44px}
+.qr{display:flex;gap:12px;align-items:center;font-size:13px;color:var(--mut);min-height:112px}.qr svg{flex:none;width:112px;height:112px;background:#fff;border-radius:8px}
+#scanv{position:fixed;inset:0;z-index:8;background:#000}#vid{width:100%;height:100%;object-fit:cover}.aim{position:absolute;left:50%;top:42%;width:62vw;max-width:300px;aspect-ratio:1;transform:translate(-50%,-50%);border:3px solid #fff;border-radius:18px;box-shadow:0 0 0 100vmax #0006}.scanbar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:8px;padding:14px 12px 22px;background:#231F20}.scanbar .btn{flex:1}.scanbar .ghost{color:#fff;border-color:#666}
+#lock{position:fixed;inset:0;z-index:7;background:var(--bg);display:grid;place-items:center;padding:24px}#lock form{display:grid;gap:12px;width:100%;max-width:360px}#lock h3{margin:0;font-size:22px;font-weight:700}
+#toast{position:fixed;left:12px;right:12px;bottom:140px;z-index:9;background:#231F20;color:#fff;border-radius:12px;padding:12px 14px;text-align:center;font-size:14px;border:1px solid var(--red)}
+@media(prefers-reduced-motion:no-preference){#sheet{animation:up .16s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.4}}}
+</style></head><body>
+<header><h1>matos bstudio<i>.</i></h1>
+<div class="stats"><button data-tab="mat"><b id="sD">–</b><span>Disponibles</span></button><button data-tab="out"><b id="sO">–</b><span>Sortis</span></button><button data-tab="pan" class="warn"><b id="sP">–</b><span>À traiter</span></button></div>
+<button id="alert" data-tab="out" hidden></button></header>
+<main>
+<div id="matTools"><div class="tools"><label class="btn scan"><span>Scanner un QR code</span><input id="cam" type="file" accept="image/*" capture="environment" aria-label="Scanner un QR code"></label><button class="btn ghost" data-a="new">Ajouter</button></div><div class="tools"><input id="q" type="search" placeholder="Chercher un matériel" aria-label="Chercher un matériel"></div><div class="chips" id="chips"></div><div class="chips" id="kits" hidden></div></div>
+<div id="list"></div>
+</main>
+<div id="bar" hidden><button class="btn ghost" data-a="clear">Annuler</button><button class="btn ghost" data-a="kitnew">Créer un kit</button><button class="btn go" data-a="checkout" id="barGo"></button></div>
+<nav><button data-tab="mat" class="on">Matériel</button><button data-tab="out">Sorties</button><button data-tab="pan">Pannes</button><button data-tab="log">Journal</button></nav>
+<div id="ov" hidden><div id="sheet" role="dialog" aria-modal="true"></div></div>
+<div id="scanv" hidden><video id="vid" playsinline muted></video><div class="aim"></div><div class="scanbar"><button class="btn ghost" data-a="scanphoto">Par photo</button><button class="btn" data-a="scanstop">Terminer</button></div></div>
+<div id="lock" hidden><form id="lockF"><h3 id="lockT"></h3><p class="sub" id="lockS"></p><label class="f">Code d'équipe<input id="lockI" type="password" autocomplete="off" autocapitalize="off"></label><button class="btn" type="submit">Valider</button></form></div>
+<div id="toast" hidden role="status"></div>
+<script src="supabase.js"></script>
+<script src="config.js"></script>
+<script>
+{
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const CATS=['Caméras','Objectifs','Stabilisation','Lumière','Modeleurs et plateau','Son','Contrôle et énergie','Autres'];
+const ETATS={ok:'OK',reparer:'À réparer',hs:'Hors service',perdu:'Perdu'};
+const TEAM=['Adem','El Hadi','Tobi','Zak','Abdennour','Sami','lwex','Lina'];
+const PROJ=['H&A','Ettakathour','Navex','Tawsil','Detarco','AD Automobile','Marialys Bio','Traveps','L.N.A','AQS','bstudio.','Location externe'];
+let db=null,items=[],kits=[],logs=[],logOn=false,tab='mat',cat='',mine=false,ready=false,cur=null,msg='Connexion à la base…',delArm=false,tT=0,qT=0,libs={};
+const sel=new Map();
+const outN=i=>(i.sorties||[]).reduce((a,s)=>a+(+s.n||0),0);
+const dispo=i=>Math.max(0,(+i.qte||1)-outN(i));
+const usable=i=>i.etat!=='hs'&&i.etat!=='perdu';
+const byId=id=>items.find(i=>i.id===id);
+const when=t=>new Date(t).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const day=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+const isLate=s=>s.retour?Date.now()>new Date(s.retour+'T23:59:59').getTime():Date.now()-s.t>=2*864e5;
+const getMe=()=>{try{return localStorage.getItem('matos-me')||''}catch(e){return''}};
+const setMe=v=>{try{localStorage.setItem('matos-me',v)}catch(e){}};
+const toast=m=>{const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(tT);tT=setTimeout(()=>t.hidden=true,3500)};
+const w=async fn=>{try{await fn();return true}catch(e){toast('Enregistrement impossible. Vérifie la connexion et réessaie.');return false}};
+const log=txt=>db.collection('log').add({t:Date.now(),txt,par:getMe()}).catch(()=>{});
+const lib=src=>libs[src]||(libs[src]=new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>{delete libs[src];ko()};document.head.appendChild(s)}));
+const slug=n=>n.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)+'-'+Math.random().toString(36).slice(2,6);
+
+const status=i=>{const o=i.sorties||[];let h='';
+  if(o.length)h+='<span class="o">'+o.map(s=>esc(s.par)+(s.n>1?' ×'+s.n:'')+(s.projet?' ('+esc(s.projet)+')':'')).join(', ')+'</span>'+(o.some(isLate)?'<span class="tag">Retard</span>':'');
+  if((+i.qte||1)>1)h+=(h?' · ':'')+'<span class="g">'+dispo(i)+'/'+i.qte+' dispo</span>';
+  else if(!o.length)h+=usable(i)?'<span class="g">Dispo</span>':'Indisponible';
+  return h};
+const row=i=>{const can=dispo(i)>0&&usable(i),on=sel.has(i.id),out=(i.sorties||[]).length&&!can;
+  return '<li class="row'+(on?' on':'')+'"><button class="main" data-a="tap" data-id="'+esc(i.id)+'" aria-pressed="'+on+'"><span class="ck'+(out?' out':can?'':' no')+'">'+(on?'✓':out?'↩':'')+'</span><span class="tx"><b>'+esc(i.nom)+(i.etat&&i.etat!=='ok'?'<span class="tag">'+esc(ETATS[i.etat]||i.etat)+'</span>':'')+'</b><span class="sub">'+status(i)+'</span></span></button><button class="more" data-a="open" data-id="'+esc(i.id)+'" aria-label="Ouvrir la fiche de '+esc(i.nom)+'">›</button></li>'};
+
+const render=()=>{
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+  $('#matTools').hidden=tab!=='mat';
+  const L=$('#list');
+  if(!ready){L.innerHTML='<p class="empty">'+esc(msg)+'</p>';return}
+  let d=0,o=0,late=0;items.forEach(i=>{o+=outN(i);if(usable(i))d+=dispo(i);late+=(i.sorties||[]).filter(isLate).length});
+  const pan=items.filter(i=>i.etat&&i.etat!=='ok');
+  $('#sD').textContent=d;$('#sO').textContent=o;$('#sP').textContent=pan.length;
+  const al=$('#alert');al.hidden=!late;al.textContent=late+' sortie'+(late>1?'s':'')+' en retard. Voir qui a quoi';
+  $('#bar').hidden=!(tab==='mat'&&sel.size);
+  $('#barGo').textContent='Sortir '+sel.size;
+  const K=$('#kits');K.hidden=!kits.length;
+  K.innerHTML='<span class="lbl">Kits</span>'+kits.map(k=>'<button class="kit" data-kit="'+esc(k.id)+'">'+esc(k.nom)+'</button>').join('')+'<button data-a="kits">Gérer</button>';
+  if(tab==='mat'){
+    const q=$('#q').value.trim().toLowerCase();
+    const f=items.filter(i=>(!cat||i.cat===cat)&&(!q||(i.nom+' '+(i.note||'')+' '+(i.proprio||'')+' '+(i.sorties||[]).map(s=>s.par+' '+(s.projet||'')).join(' ')).toLowerCase().includes(q)))
+      .sort((a,b)=>CATS.indexOf(a.cat)-CATS.indexOf(b.cat)||String(a.nom).localeCompare(b.nom,'fr'));
+    if(!f.length){L.innerHTML='<p class="empty">'+(items.length?'Aucun résultat.':'Aucun matériel pour le moment. Touche « Ajouter » pour créer le premier.')+'</p>';return}
+    let h='',c=null;
+    f.forEach(i=>{if(!cat&&!q&&i.cat!==c){h+=(c===null?'':'</ul>')+'<h2>'+esc(i.cat||'Autres')+'</h2><ul>';c=i.cat}else if(c===null){h+='<ul>';c=''}h+=row(i)});
+    L.innerHTML=h+'</ul>';
+  }else if(tab==='out'){
+    const me=getMe(),g=new Map();
+    items.forEach(i=>(i.sorties||[]).forEach(s=>{if(mine&&s.par!==me)return;const k=s.par+'||'+(s.projet||'');if(!g.has(k))g.set(k,[]);g.get(k).push({i,s})}));
+    const head=me?'<div class="chips"><button data-mine="0" class="'+(mine?'':'on')+'">Toutes</button><button data-mine="1" class="'+(mine?'on':'')+'">Les miennes</button></div>':'';
+    const gs=[...g].sort((a,b)=>b[1].some(x=>isLate(x.s))-a[1].some(x=>isLate(x.s)));
+    L.innerHTML=head+(gs.length?gs.map(([k,v])=>{const[p,pr]=k.split('||');return '<h2><span>'+esc(p)+(pr?' · '+esc(pr):'')+(v.some(x=>isLate(x.s))?'<span class="tag">Retard</span>':'')+'</span><button data-a="retall" data-k="'+esc(k)+'">Tout rendre</button></h2><ul>'+v.map(({i,s})=>'<li class="row"><div class="main"><span class="tx"><b>'+esc(i.nom)+(s.n>1?' ×'+s.n:'')+'</b><span class="sub">Depuis le '+esc(when(s.t))+(s.retour?' · retour prévu '+esc(day(s.retour)):'')+'</span></span></div><button class="ret" data-a="ret" data-id="'+esc(i.id)+'" data-t="'+esc(s.t)+'">Retour</button></li>').join('')+'</ul>'}).join(''):'<p class="empty">'+(mine?'Tu n\'as rien en sortie.':'Tout le matériel est au studio.')+'</p>');
+  }else if(tab==='pan'){
+    L.innerHTML=pan.length?'<ul>'+pan.map(i=>'<li class="row"><button class="main" data-a="open" data-id="'+esc(i.id)+'"><span class="tx"><b>'+esc(i.nom)+'<span class="tag">'+esc(ETATS[i.etat]||i.etat)+'</span></b><span class="sub">'+esc(i.note||'Aucune note')+'</span></span></button></li>').join('')+'</ul>':'<p class="empty">Aucune panne ni perte signalée.</p>';
+  }else{
+    if(!logOn&&db){logOn=true;db.collection('log').orderBy('t','desc').limit(80).onSnapshot(s=>{logs=s.docs.map(x=>x.data());if(tab==='log')render()},()=>{})}
+    L.innerHTML=logs.length?'<ul class="log">'+logs.map(l=>'<li>'+esc(l.txt)+'<time>'+esc(when(l.t))+(l.par?' · '+esc(l.par):'')+'</time></li>').join('')+'</ul>':'<p class="empty">Le journal est vide.</p>';
+  }};
+const chips=()=>$('#chips').innerHTML=['',...CATS].map(c=>'<button data-cat="'+esc(c)+'" class="'+(c===cat?'on':'')+'">'+esc(c||'Tout')+'</button>').join('');
+const close=()=>{$('#ov').hidden=true;cur=null;delArm=false};
+const open=h=>{$('#sheet').innerHTML=h;$('#ov').hidden=false;$('#sheet').scrollTop=0};
+
+const itemSheet=i=>{cur=i||{};delArm=false;
+  open('<h3>'+(i?'Fiche matériel':'Nouveau matériel')+'</h3>'
+  +'<label class="f">Nom<input id="fN" value="'+esc(cur.nom||'')+'"></label>'
+  +'<div class="two"><label class="f">Catégorie<select id="fC">'+CATS.map(c=>'<option'+(c===(cur.cat||cat||CATS[0])?' selected':'')+'>'+esc(c)+'</option>').join('')+'</select></label>'
+  +'<label class="f">Quantité<input id="fQ" type="number" min="1" inputmode="numeric" value="'+esc(cur.qte||1)+'"></label></div>'
+  +'<div class="two"><label class="f">État<select id="fE">'+Object.entries(ETATS).map(([k,v])=>'<option value="'+k+'"'+(k===(cur.etat||'ok')?' selected':'')+'>'+v+'</option>').join('')+'</select></label>'
+  +'<label class="f">Propriétaire<input id="fP" placeholder="Agence" value="'+esc(cur.proprio||'')+'"></label></div>'
+  +'<label class="f">Note (panne, accessoires, remarque)<textarea id="fT">'+esc(cur.note||'')+'</textarea></label>'
+  +'<div class="acts"><button class="btn ghost" data-a="close">Fermer</button><button class="btn" data-a="save">Enregistrer</button></div>'
+  +(i?'<div class="qr" id="qrBox"><span>Chargement du QR code…</span></div><button class="del" data-a="del">Supprimer ce matériel</button>':''));
+  if(i){const id=i.id;lib('qrgen.js').then(()=>{const b=$('#qrBox');if(!b||!cur||cur.id!==id)return;const q=qrcode(0,'M');q.addData('matos:'+id);q.make();b.innerHTML=q.createSvgTag(4,8)+'<span>QR code de ce matériel, à coller dessus.<br>Code : matos:'+esc(id)+'</span>'}).catch(()=>{const b=$('#qrBox');if(b)b.innerHTML='<span>Code : matos:'+esc(id)+'</span>'})}};
+const outSheet=i=>open('<h3>'+esc(i.nom)+'</h3>'
+  +(i.sorties||[]).map(s=>'<div class="pick"><span>Sorti par '+esc(s.par)+(s.n>1?' ×'+s.n:'')+(s.projet?' ('+esc(s.projet)+')':'')+'<br><span class="sub">Depuis le '+esc(when(s.t))+(s.retour?' · retour prévu '+esc(day(s.retour)):'')+'</span></span><button class="btn" data-a="ret" data-id="'+esc(i.id)+'" data-t="'+esc(s.t)+'">Retour</button></div>').join('')
+  +'<div class="acts"><button class="btn ghost" data-a="close">Fermer</button><button class="btn ghost" data-a="open" data-id="'+esc(i.id)+'">Voir la fiche</button></div>');
+const checkoutSheet=()=>{const rec=[...new Set(items.flatMap(i=>(i.sorties||[]).map(s=>s.projet)).filter(Boolean).concat(PROJ))];
+  open('<h3>Sortie de matériel</h3>'
+  +[...sel].map(([id,n])=>{const i=byId(id);if(!i)return'';const m=dispo(i);return '<div class="pick"><span>'+esc(i.nom)+'</span>'+(m>1?'<input type="number" min="1" max="'+m+'" value="'+Math.min(n,m)+'" data-q="'+esc(id)+'" inputmode="numeric" aria-label="Quantité de '+esc(i.nom)+'">':'')+'</div>'}).join('')
+  +'<label class="f">Qui sort le matériel ?<input id="cW" list="team" value="'+esc(getMe())+'" placeholder="Ton prénom"><datalist id="team">'+TEAM.map(t=>'<option value="'+esc(t)+'">').join('')+'</datalist></label>'
+  +'<label class="f">Tournage ou client<input id="cP" list="proj" placeholder="Ex. Tawsil, AQS, location externe"><datalist id="proj">'+rec.map(t=>'<option value="'+esc(t)+'">').join('')+'</datalist></label>'
+  +'<label class="f">Retour prévu (facultatif)<input id="cR" type="date"></label>'
+  +'<div class="acts"><button class="btn ghost" data-a="close">Annuler</button><button class="btn" data-a="go">Valider la sortie</button></div>')};
+const doneSheet=txt=>open('<h3>Sortie enregistrée</h3><textarea class="msg" id="waT" readonly aria-label="Message pour le groupe WhatsApp">'+esc(txt)+'</textarea><div class="acts"><button class="btn ghost" data-a="close">Fermer</button><button class="btn" data-a="copy">Copier pour WhatsApp</button></div>');
+const kitsSheet=()=>open('<h3>Kits</h3>'+(kits.length?kits.map(k=>'<div class="pick"><span>'+esc(k.nom)+'<br><span class="sub">'+(k.ids||[]).map(id=>(byId(id)||{}).nom).filter(Boolean).map(esc).join(', ')+'</span></span><button class="del" data-a="kitdel" data-id="'+esc(k.id)+'">Supprimer</button></div>').join(''):'<p class="sub">Aucun kit. Sélectionne du matériel puis touche « Créer un kit ».</p>')+'<div class="acts"><button class="btn ghost" data-a="close">Fermer</button></div>');
+
+const doCheckout=async()=>{
+  const par=$('#cW').value.trim(),projet=$('#cP').value.trim(),retour=$('#cR').value;
+  if(!par){toast('Indique qui sort le matériel.');return}
+  setMe(par);const t=Date.now();
+  document.querySelectorAll('[data-q]').forEach(e=>sel.set(e.dataset.q,Math.max(1,+e.value||1)));
+  const jobs=[...sel].map(([id,n0])=>{const i=byId(id);if(!i)return null;const n=Math.min(n0,dispo(i));if(n<1)return null;return{i,n}}).filter(Boolean);
+  const res=await Promise.all(jobs.map(({i,n})=>w(()=>db.doc('items/'+i.id).update({sorties:[...(i.sorties||[]),retour?{par,projet,n,t,retour}:{par,projet,n,t}]}))));
+  const names=jobs.filter((_,k)=>res[k]).map(({i,n})=>i.nom+(n>1?' ×'+n:''));
+  if(!names.length)return;
+  log('Sortie par '+par+(projet?' pour '+projet:'')+' : '+names.join(', '));
+  sel.clear();render();
+  doneSheet('Sortie matériel bstudio.\n'+par+(projet?' · '+projet:'')+'\n'+names.map(n=>'• '+n).join('\n')+(retour?'\nRetour prévu : '+day(retour):''))};
+const doReturn=async(id,t)=>{const i=byId(id);if(!i)return false;
+  const s=(i.sorties||[]).find(x=>String(x.t)===String(t));if(!s)return false;
+  const ok=await w(()=>db.doc('items/'+id).update({sorties:(i.sorties||[]).filter(x=>x!==s)}));
+  if(ok)log('Retour : '+i.nom+(s.n>1?' ×'+s.n:'')+' (sorti par '+s.par+')');return ok};
+const retAll=async k=>{const[p,pr]=k.split('||'),m=s=>s.par===p&&(s.projet||'')===pr;
+  const js=items.filter(i=>(i.sorties||[]).some(m));
+  const res=await Promise.all(js.map(i=>w(()=>db.doc('items/'+i.id).update({sorties:i.sorties.filter(s=>!m(s))}))));
+  const names=js.filter((_,x)=>res[x]).map(i=>i.nom);
+  if(names.length){log('Retour complet de '+p+(pr?' ('+pr+')':'')+' : '+names.join(', '));toast('Tout est rendu.')}};
+const doSave=async()=>{
+  const nom=$('#fN').value.trim();if(!nom){toast('Donne un nom au matériel.');return}
+  const d={nom,cat:$('#fC').value,qte:Math.max(1,+$('#fQ').value||1),etat:$('#fE').value,proprio:$('#fP').value.trim(),note:$('#fT').value.trim()};
+  let ok;
+  if(cur.id){const old=cur.etat||'ok',cid=cur.id;ok=await w(()=>db.doc('items/'+cid).update(d));
+    if(ok&&old!==d.etat)log('État de '+nom+' : '+ETATS[d.etat]+(d.note?' ('+d.note+')':''))}
+  else{const id=slug(nom);ok=await w(()=>db.doc('items/'+id).set({...d,sorties:[]}));if(ok)log('Ajout au parc : '+nom)}
+  if(ok){close();toast('Enregistré.')}};
+const pickKit=k=>{let n=0;const miss=[];(k.ids||[]).forEach(id=>{const i=byId(id);if(!i)return;if(usable(i)&&dispo(i)>0){sel.set(id,sel.get(id)||1);n++}else miss.push(i.nom)});
+  render();toast(k.nom+' : '+n+' sélectionné'+(n>1?'s':'')+(miss.length?'. Indisponible : '+miss.join(', '):'')+'.')};
+const scanned=txt=>{const id=String(txt).trim().replace(/^matos:/i,''),i=byId(id);
+  if(!i){toast('Ce QR code ne correspond à aucun matériel.');return}
+  if((i.sorties||[]).length&&!(dispo(i)>0&&usable(i))){outSheet(i);return}
+  if(!usable(i)||dispo(i)<1){toast(i.nom+' : '+(ETATS[i.etat]||'indisponible')+'.');return}
+  sel.set(id,1);tab='mat';render();toast(i.nom+' ajouté. Scanne le suivant ou valide la sortie.')};
+const loadImg=async f=>{try{return await createImageBitmap(f)}catch(e){return await new Promise((ok,ko)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=ko;im.src=URL.createObjectURL(f)})}};
+const decode=async img=>{
+  try{if('BarcodeDetector'in window){const r=await new BarcodeDetector({formats:['qr_code']}).detect(img);if(r&&r[0])return r[0].rawValue}}catch(e){}
+  await lib('jsqr.js');
+  const QR=typeof jsQR==='function'?jsQR:(typeof jsQR==='object'&&jsQR&&jsQR.default);
+  if(!QR)throw new Error('lib');
+  const W=img.naturalWidth||img.width,H=img.naturalHeight||img.height;
+  for(const m of[1400,900,2200,500]){const k=Math.min(1,m/Math.max(W,H)),c=document.createElement('canvas');
+    c.width=Math.max(1,Math.round(W*k));c.height=Math.max(1,Math.round(H*k));const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,c.width,c.height);
+    const r=QR(x.getImageData(0,0,c.width,c.height).data,c.width,c.height,{inversionAttempts:'attemptBoth'});if(r&&r.data)return r.data}
+  return null};
+$('#cam').addEventListener('pointerdown',()=>{lib('jsqr.js').catch(()=>{})});
+$('#cam').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  if(!ready){toast('La base n\'est pas encore chargée, réessaie dans un instant.');return}
+  toast('Lecture du QR code…');
+  let img;try{img=await loadImg(f)}catch(err){toast('Cette image ne peut pas être lue. Prends une photo JPEG ou PNG.');return}
+  try{const t=await decode(img);if(!t){toast('Aucun QR code trouvé sur la photo. Cadre l\'étiquette de plus près, bien éclairée.');return}scanned(t)}
+  catch(err){toast('Lecteur QR indisponible sur cet appareil. Utilise la recherche.')}});
+
+let stream=null,scanOn=false,noLive=false,lastCode='',lastAt=0;
+const stopScan=()=>{scanOn=false;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('#scanv').hidden=true};
+const onLive=txt=>{const id=String(txt).trim().replace(/^matos:/i,''),i=byId(id);
+  if(!i){toast('Ce QR code ne correspond à aucun matériel.');return}
+  if((i.sorties||[]).length&&!(dispo(i)>0&&usable(i))){stopScan();outSheet(i);return}
+  if(!usable(i)||dispo(i)<1){toast(i.nom+' : '+(ETATS[i.etat]||'indisponible')+'.');return}
+  if(sel.has(id)){toast(i.nom+' est déjà dans la sortie.');return}
+  sel.set(id,1);render();toast(i.nom+' ajouté ('+sel.size+'). Continue ou touche Terminer.')};
+const liveScan=async()=>{
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280}},audio:false})}catch(e){return false}
+  const v=$('#vid');v.srcObject=stream;$('#scanv').hidden=false;scanOn=true;try{await v.play()}catch(e){}
+  try{await lib('jsqr.js')}catch(e){}
+  const QR=typeof jsQR==='function'?jsQR:(typeof jsQR==='object'&&jsQR&&jsQR.default);
+  let det=null;try{if('BarcodeDetector'in window)det=new BarcodeDetector({formats:['qr_code']})}catch(e){}
+  const c=document.createElement('canvas'),x=c.getContext('2d',{willReadFrequently:true});
+  const tick=async()=>{if(!scanOn)return;
+    if(v.readyState>=2&&v.videoWidth){let txt=null;
+      try{if(det){const r=await det.detect(v);if(r&&r[0])txt=r[0].rawValue}}catch(e){det=null}
+      if(!txt&&QR){const k=Math.min(1,800/Math.max(v.videoWidth,v.videoHeight));c.width=Math.round(v.videoWidth*k);c.height=Math.round(v.videoHeight*k);x.drawImage(v,0,0,c.width,c.height);
+        const r=QR(x.getImageData(0,0,c.width,c.height).data,c.width,c.height,{inversionAttempts:'dontInvert'});if(r&&r.data)txt=r.data}
+      if(txt&&scanOn&&(txt!==lastCode||Date.now()-lastAt>2500)){lastCode=txt;lastAt=Date.now();try{navigator.vibrate&&navigator.vibrate(60)}catch(e){}onLive(txt)}}
+    setTimeout(tick,140)};
+  tick();return true};
+document.querySelector('.scan').addEventListener('click',e=>{
+  if(noLive||!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia))return;
+  e.preventDefault();
+  if(!ready){toast('La base n\'est pas encore chargée, réessaie dans un instant.');return}
+  liveScan().then(ok=>{if(!ok){noLive=true;toast('Caméra indisponible. Touche encore le bouton pour scanner par photo.')}})});
+const makeDb=()=>{
+  if(!window.supabase||!window.MATOS||!MATOS.url)return null;
+  const sb=supabase.createClient(MATOS.url,MATOS.key,{auth:{persistSession:false},global:{headers:{'x-team-code':getCode()}}});
+  const subs={},cache={};
+  const snap=rows=>({docs:rows.map(r=>({id:String(r.id),data:()=>r.data||{t:r.t,txt:r.txt,par:r.par}}))});
+  const load=async tb=>{const r=await(tb==='log'?sb.from('log').select('*').order('t',{ascending:false}).limit(80):sb.from(tb).select('*'));
+    if(r.error)throw r.error;cache[tb]=r.data||[];(subs[tb]||[]).forEach(f=>f(snap(cache[tb])))};
+  const safe=tb=>load(tb).catch(()=>{});
+  const retry=tb=>load(tb).catch(()=>setTimeout(()=>retry(tb),4000));
+  const watch=(tb,next)=>{const first=!subs[tb];(subs[tb]=subs[tb]||[]).push(next);
+    if(!first){if(cache[tb])next(snap(cache[tb]));return}
+    retry(tb)};
+  let ch=null;try{ch=sb.channel('matos-sync',{config:{broadcast:{self:false}}});ch.on('broadcast',{event:'chg'},p=>{const t=p&&p.payload&&p.payload.tb;if(t&&subs[t])safe(t)}).subscribe()}catch(e){}
+  const ping=tb=>{try{ch&&ch.send({type:'broadcast',event:'chg',payload:{tb}})}catch(e){}};
+  const all=()=>{if(!document.hidden)Object.keys(subs).forEach(safe)};
+  setInterval(all,30000);document.addEventListener('visibilitychange',all);
+  const chk=r=>{if(r.error)throw r.error};
+  const coll=tb=>{const c={orderBy:()=>c,limit:()=>c,onSnapshot:n=>watch(tb,n),add:async d=>{chk(await sb.from(tb).insert(d));safe(tb);ping(tb)}};return c};
+  const doc=p=>{const[tb,id]=p.split('/');return{
+    set:async d=>{chk(await sb.from(tb).upsert({id,data:d}));await safe(tb);ping(tb)},
+    update:async d=>{const c0=(cache[tb]||[]).find(r=>r.id===id);if(!c0)throw new Error('missing');chk(await sb.from(tb).update({data:{...c0.data,...d}}).eq('id',id));await safe(tb);ping(tb)},
+    delete:async()=>{chk(await sb.from(tb).delete().eq('id',id));await safe(tb);ping(tb)}}};
+  return{collection:coll,doc}};
+document.addEventListener('click',async e=>{
+  if(e.target.id==='ov'){close();return}
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.tab){tab=b.dataset.tab;render();scrollTo(0,0);return}
+  if('cat'in b.dataset){cat=b.dataset.cat;chips();render();return}
+  if('mine'in b.dataset){mine=b.dataset.mine==='1';render();return}
+  if(b.dataset.kit){const k=kits.find(x=>x.id===b.dataset.kit);if(k)pickKit(k);return}
+  const a=b.dataset.a,id=b.dataset.id;
+  if(a==='new')itemSheet(null);
+  else if(a==='open'){const i=byId(id);if(i)itemSheet(i)}
+  else if(a==='tap'){const i=byId(id);if(!i)return;
+    if(sel.has(id)){sel.delete(id);render()}
+    else if(usable(i)&&dispo(i)>0){sel.set(id,1);render()}
+    else if((i.sorties||[]).length)outSheet(i);else itemSheet(i)}
+  else if(a==='clear'){sel.clear();render()}
+  else if(a==='checkout')checkoutSheet();
+  else if(a==='close')close();
+  else if(a==='go'){b.disabled=true;await doCheckout();b.disabled=false}
+  else if(a==='save'){b.disabled=true;await doSave();b.disabled=false}
+  else if(a==='ret'){b.disabled=true;if(await doReturn(id,b.dataset.t)){toast('Retour enregistré.');close()}else b.disabled=false}
+  else if(a==='retall'){b.disabled=true;await retAll(b.dataset.k)}
+  else if(a==='copy'){const t=$('#waT');try{await navigator.clipboard.writeText(t.value);toast('Copié. Colle-le dans le groupe WhatsApp.')}catch(err){t.focus();t.select();toast('Sélectionné : appuie longuement puis « Copier ».')}}
+  else if(a==='kitnew')open('<h3>Créer un kit</h3><p class="sub">'+[...sel.keys()].map(x=>esc((byId(x)||{}).nom||'')).join(', ')+'</p><label class="f">Nom du kit<input id="kN" placeholder="Ex. Kit interview, Kit podcast"></label><div class="acts"><button class="btn ghost" data-a="close">Annuler</button><button class="btn" data-a="kitsave">Enregistrer le kit</button></div>');
+  else if(a==='kitsave'){const nom=$('#kN').value.trim();if(!nom){toast('Donne un nom au kit.');return}
+    b.disabled=true;if(await w(()=>db.doc('kits/'+slug(nom)).set({nom,ids:[...sel.keys()]}))){close();toast('Kit « '+nom+' » enregistré.')}else b.disabled=false}
+  else if(a==='kits')kitsSheet();
+  else if(a==='scanstop'){stopScan();tab='mat';render()}
+  else if(a==='scanphoto'){stopScan();noLive=true;$('#cam').click()}
+  else if(a==='kitdel'){if(await w(()=>db.doc('kits/'+id).delete())){kits=kits.filter(k=>k.id!==id);kitsSheet();render()}}
+  else if(a==='del'){if(!delArm){delArm=true;b.textContent='Toucher encore pour confirmer la suppression';return}
+    const n=cur.nom,cid=cur.id;if(await w(()=>db.doc('items/'+cid).delete())){log('Retrait du parc : '+n);sel.delete(cid);close()}}
+});
+$('#q').addEventListener('input',()=>{clearTimeout(qT);qT=setTimeout(render,120)});
+chips();render();
+const timer=setTimeout(()=>{if(!ready){msg='La base est injoignable pour le moment. Vérifie ta connexion internet.';render()}},10000);
+const getCode=()=>{try{return localStorage.getItem('matos-code')||''}catch(e){return''}};
+const start=()=>{db=makeDb();
+if(!db){clearTimeout(timer);msg='Configuration de la base manquante.';render()}
+else{
+  db.collection('items').onSnapshot(s=>{items=s.docs.map(d=>({id:d.id,...d.data()}));ready=true;clearTimeout(timer);for(const id of[...sel.keys()]){const i=byId(id);if(!i||!usable(i)||dispo(i)<1)sel.delete(id)}render()});
+  db.collection('kits').onSnapshot(s=>{kits=s.docs.map(d=>({id:d.id,...d.data()}));if(ready)render()});
+}};
+const lock=(t,s,fn)=>{$('#lockT').textContent=t;$('#lockS').textContent=s;$('#lockI').value='';$('#lock').hidden=false;$('#lockF').onsubmit=async e=>{e.preventDefault();const v=$('#lockI').value.trim();if(!/^[!-~]{6,}$/.test(v)){toast('Au moins 6 caractères : lettres sans accent, chiffres ou symboles, sans espace.');return}await fn(v)}};
+const rpc=(code,fn,args)=>supabase.createClient(MATOS.url,MATOS.key,{auth:{persistSession:false},global:{headers:{'x-team-code':code}}}).rpc(fn,args);
+const enter=async v=>{const r=await rpc(v,'team_ok');if(r.error){toast('Connexion impossible, réessaie.');return}if(!r.data){toast('Code incorrect.');return}try{localStorage.setItem('matos-code',v)}catch(e){}$('#lock').hidden=true;start()};
+const gate=async()=>{
+  if(!window.supabase||!window.MATOS){start();return}
+  const h=await rpc('','has_code');
+  if(h.error){setTimeout(gate,4000);return}
+  if(!h.data){clearTimeout(timer);lock('Crée le code d\'équipe','Premier lancement : choisis le code que toute l\'équipe devra saisir.',async v=>{const r=await rpc(v,'set_code',{new_code:v});if(r.error||!r.data){toast('Création impossible, réessaie.');gate();return}await enter(v)});return}
+  const c=getCode();
+  if(c){const r=await rpc(c,'team_ok');if(r.error){setTimeout(gate,4000);return}if(r.data){start();return}}
+  clearTimeout(timer);lock('Code d\'équipe','Demande le code à lwex ou à Lina.',enter)};
+gate();
+}
+</script></body></html>
