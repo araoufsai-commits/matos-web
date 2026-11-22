@@ -54,9 +54,10 @@ ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 h2{font-size:14px;font-weight:700;margin:16px 2px 6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 h2 button{font-size:13px;font-weight:700;color:var(--red);height:38px;padding:0 8px}
 .ret{padding:0 14px;font-size:14px;font-weight:700;color:var(--red);border-left:1px solid var(--line);white-space:nowrap}
+.log .o{color:var(--red);font-weight:600}.dot{flex:none;width:12px;height:12px;border-radius:50%;background:var(--line)}.dot.on{background:var(--ok)}
 .empty{padding:36px 12px;text-align:center;color:var(--mut)}
 .log li{background:var(--card);border-radius:10px;padding:9px 12px;font-size:14px}.log time{display:block;font-size:13px;color:var(--mut)}
-nav{position:fixed;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#231F20;z-index:3}
+nav{position:fixed;bottom:0;left:0;right:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);background:#231F20;z-index:3}
 nav button{height:62px;color:#b9b3b4;font-size:13px;font-weight:600}
 nav button.on{color:#fff;box-shadow:inset 0 3px 0 var(--red)}
 #bar{position:fixed;bottom:62px;left:0;right:0;z-index:3;display:flex;gap:8px;padding:10px 12px;background:var(--bg);border-top:1px solid var(--line)}
@@ -89,7 +90,7 @@ label.f textarea{height:76px;padding:10px 12px;resize:vertical}textarea.msg{heig
 <div id="list"></div>
 </main>
 <div id="bar" hidden><button class="btn ghost" data-a="clear">Annuler</button><button class="btn ghost" data-a="kitnew">Créer un kit</button><button class="btn go" data-a="checkout" id="barGo"></button></div>
-<nav><button data-tab="mat" class="on">Matériel</button><button data-tab="out">Sorties</button><button data-tab="pan">Pannes</button><button data-tab="log">Journal</button></nav>
+<nav><button data-tab="mat" class="on">Matériel</button><button data-tab="out">Sorties</button><button data-tab="pan">Pannes</button><button data-tab="log">Journal</button><button data-tab="team" id="navT" hidden>Équipe</button></nav>
 <div id="ov" hidden><div id="sheet" role="dialog" aria-modal="true"></div></div>
 <div id="scanv" hidden><video id="vid" playsinline muted></video><div class="aim"></div><div class="scanbar"><button class="btn ghost" data-a="scanphoto">Par photo</button><button class="btn" data-a="scanstop">Terminer</button></div></div>
 <div id="lock" hidden><div id="lockB" style="width:100%;max-width:360px"></div></div>
@@ -155,12 +156,14 @@ const render=()=>{
     items.forEach(i=>(i.sorties||[]).forEach(s=>{if(mine&&s.par!==me)return;const k=s.par+'||'+(s.projet||'');if(!g.has(k))g.set(k,[]);g.get(k).push({i,s})}));
     const head=me?'<div class="chips"><button data-mine="0" class="'+(mine?'':'on')+'">Toutes</button><button data-mine="1" class="'+(mine?'on':'')+'">Les miennes</button></div>':'';
     const gs=[...g].sort((a,b)=>b[1].some(x=>isLate(x.s))-a[1].some(x=>isLate(x.s)));
-    L.innerHTML=head+(gs.length?gs.map(([k,v])=>{const[p,pr]=k.split('||');return '<h2><span>'+esc(p)+(pr?' · '+esc(pr):'')+(v.some(x=>isLate(x.s))?'<span class="tag">Retard</span>':'')+'</span><button data-a="retall" data-k="'+esc(k)+'">Tout rendre</button></h2><ul>'+v.map(({i,s})=>'<li class="row"><div class="main"><span class="tx"><b>'+esc(i.nom)+(s.n>1?' ×'+s.n:'')+'</b><span class="sub">Depuis le '+esc(when(s.t))+(s.retour?' · retour prévu '+esc(day(s.retour)):'')+'</span></span></div><button class="ret" data-a="ret" data-id="'+esc(i.id)+'" data-t="'+esc(s.t)+'">Retour</button></li>').join('')+'</ul>'}).join(''):'<p class="empty">'+(mine?'Tu n\'as rien en sortie.':'Tout le matériel est au studio.')+'</p>');
+    L.innerHTML=head+(gs.length?gs.map(([k,v])=>{const[p,pr]=k.split('||');return '<h2><span>'+esc(p)+(pr?' · '+esc(pr):'')+(v.some(x=>isLate(x.s))?'<span class="tag">Retard</span>':'')+'</span>'+(v.some(x=>canRet(x.s))?'<button data-a="retall" data-k="'+esc(k)+'">Tout rendre</button>':'')+'</h2><ul>'+v.map(({i,s})=>'<li class="row"><div class="main"><span class="tx"><b>'+esc(i.nom)+(s.n>1?' ×'+s.n:'')+'</b><span class="sub">Depuis le '+esc(when(s.t))+(s.retour?' · retour prévu '+esc(day(s.retour)):'')+'</span></span></div>'+(canRet(s)?'<button class="ret" data-a="ret" data-id="'+esc(i.id)+'" data-t="'+esc(s.t)+'">Retour</button>':'')+'</li>').join('')+'</ul>'}).join(''):'<p class="empty">'+(mine?'Tu n\'as rien en sortie.':'Tout le matériel est au studio.')+'</p>');
   }else if(tab==='pan'){
     L.innerHTML=pan.length?'<ul>'+pan.map(i=>'<li class="row"><button class="main" data-a="open" data-id="'+esc(i.id)+'"><span class="tx"><b>'+esc(i.nom)+'<span class="tag">'+esc(ETATS[i.etat]||i.etat)+'</span></b><span class="sub">'+esc(i.note||'Aucune note')+'</span></span></button></li>').join('')+'</ul>':'<p class="empty">Aucune panne ni perte signalée.</p>';
+  }else if(tab==='log'){
+    const adm=!!(me&&me.admin);
+    L.innerHTML=(adm?'<div class="chips"><button data-who="*" class="'+(who==='*'?'on':'')+'">Tous</button>'+team.map(m=>'<button data-who="'+esc(m.ident)+'" class="'+(who===m.ident?'on':'')+'">'+esc(m.nom)+'</button>').join('')+'</div>':'')+mvHtml(moves,adm&&who==='*');
   }else{
-    if(!logOn&&db){logOn=true;db.collection('log').orderBy('t','desc').limit(80).onSnapshot(s=>{logs=s.docs.map(x=>x.data());if(tab==='log')render()},()=>{})}
-    L.innerHTML=logs.length?'<ul class="log">'+logs.map(l=>'<li>'+esc(l.txt)+'<time>'+esc(when(l.t))+(l.par?' · '+esc(l.par):'')+'</time></li>').join('')+'</ul>':'<p class="empty">Le journal est vide.</p>';
+    L.innerHTML=team.length?'<ul>'+team.map(m=>{let out=0,late=0;items.forEach(i=>(i.sorties||[]).forEach(s=>{if(s.ident===m.ident){out++;if(isLate(s))late++}}));return '<li class="row"><button class="main" data-a="member" data-id="'+esc(m.ident)+'"><span class="dot'+(online(m)?' on':'')+'"></span><span class="tx"><b>'+esc(m.nom)+(m.actif?'':'<span class="tag">Désactivé</span>')+(late?'<span class="tag">'+late+' retard'+(late>1?'s':'')+'</span>':'')+'</b><span class="sub">'+esc(m.ident)+' · '+esc(seen(m))+' · '+out+' en main</span></span></button></li>'}).join('')+'</ul>':'<p class="empty">Chargement de l\'équipe…</p>';
   }};
 const chips=()=>$('#chips').innerHTML=['',...CATS].map(c=>'<button data-cat="'+esc(c)+'" class="'+(c===cat?'on':'')+'">'+esc(c||'Tout')+'</button>').join('');
 const close=()=>{$('#ov').hidden=true;cur=null;delArm=false};
@@ -178,7 +181,7 @@ const itemSheet=i=>{cur=i||{};delArm=false;
   +(i?'<div class="qr" id="qrBox"><span>Chargement du QR code…</span></div><button class="del" data-a="del">Supprimer ce matériel</button>':''));
   if(i){const id=i.id;lib('qrgen.js').then(()=>{const b=$('#qrBox');if(!b||!cur||cur.id!==id)return;const q=qrcode(0,'M');q.addData('matos:'+id);q.make();b.innerHTML=q.createSvgTag(4,8)+'<span>QR code de ce matériel, à coller dessus.<br>Code : matos:'+esc(id)+'</span>'}).catch(()=>{const b=$('#qrBox');if(b)b.innerHTML='<span>Code : matos:'+esc(id)+'</span>'})}};
 const outSheet=i=>open('<h3>'+esc(i.nom)+'</h3>'
-  +(i.sorties||[]).map(s=>'<div class="pick"><span>Sorti par '+esc(s.par)+(s.n>1?' ×'+s.n:'')+(s.projet?' ('+esc(s.projet)+')':'')+'<br><span class="sub">Depuis le '+esc(when(s.t))+(s.retour?' · retour prévu '+esc(day(s.retour)):'')+'</span></span><button class="btn" data-a="ret" data-id="'+esc(i.id)+'" data-t="'+esc(s.t)+'">Retour</button></div>').join('')
+  +(i.sorties||[]).map(s=>'<div class="pick"><span>Sorti par '+esc(s.par)+(s.n>1?' ×'+s.n:'')+(s.projet?' ('+esc(s.projet)+')':'')+'<br><span class="sub">Depuis le '+esc(when(s.t))+(s.retour?' · retour prévu '+esc(day(s.retour)):'')+'</span></span>'+(canRet(s)?'<button class="btn" data-a="ret" data-id="'+esc(i.id)+'" data-t="'+esc(s.t)+'">Retour</button>':'')+'</div>').join('')
   +'<div class="acts"><button class="btn ghost" data-a="close">Fermer</button><button class="btn ghost" data-a="open" data-id="'+esc(i.id)+'">Voir la fiche</button></div>');
 const checkoutSheet=()=>{const rec=[...new Set(items.flatMap(i=>(i.sorties||[]).map(s=>s.projet)).filter(Boolean).concat(PROJ))];
   open('<h3>Sortie de matériel</h3>'
@@ -190,27 +193,42 @@ const checkoutSheet=()=>{const rec=[...new Set(items.flatMap(i=>(i.sorties||[]).
 const doneSheet=txt=>open('<h3>Sortie enregistrée</h3><textarea class="msg" id="waT" readonly aria-label="Message pour le groupe WhatsApp">'+esc(txt)+'</textarea><div class="acts"><button class="btn ghost" data-a="close">Fermer</button><button class="btn" data-a="copy">Copier pour WhatsApp</button></div>');
 const kitsSheet=()=>open('<h3>Kits</h3>'+(kits.length?kits.map(k=>'<div class="pick"><span>'+esc(k.nom)+'<br><span class="sub">'+(k.ids||[]).map(id=>(byId(id)||{}).nom).filter(Boolean).map(esc).join(', ')+'</span></span><button class="del" data-a="kitdel" data-id="'+esc(k.id)+'">Supprimer</button></div>').join(''):'<p class="sub">Aucun kit. Sélectionne du matériel puis touche « Créer un kit ».</p>')+'<div class="acts"><button class="btn ghost" data-a="close">Fermer</button></div>');
 
+const R=(fn,args)=>rpc({'x-session':getTok()},fn,args);
 const doCheckout=async()=>{
-  const par=$('#cW').value.trim(),projet=$('#cP').value.trim(),retour=$('#cR').value;
-  if(!par){toast('Indique qui sort le matériel.');return}
-  setMe(par);const t=Date.now();
+  const projet=$('#cP').value.trim(),retour=$('#cR').value;
   document.querySelectorAll('[data-q]').forEach(e=>sel.set(e.dataset.q,Math.max(1,+e.value||1)));
-  const jobs=[...sel].map(([id,n0])=>{const i=byId(id);if(!i)return null;const n=Math.min(n0,dispo(i));if(n<1)return null;return{i,n}}).filter(Boolean);
-  const res=await Promise.all(jobs.map(({i,n})=>w(()=>db.doc('items/'+i.id).update({sorties:[...(i.sorties||[]),retour?{par,projet,n,t,retour,ident:me&&me.ident}:{par,projet,n,t,ident:me&&me.ident}]}))));
-  const names=jobs.filter((_,k)=>res[k]).map(({i,n})=>i.nom+(n>1?' ×'+n:''));
-  if(!names.length)return;
-  log('Sortie par '+par+(projet?' pour '+projet:'')+' : '+names.join(', '));
+  const list=[...sel].map(([id,n])=>({id,n}));if(!list.length)return;
+  const r=await R('checkout',{p_items:list,p_projet:projet,p_retour:retour});
+  if(r.error||!r.data){toast('Enregistrement impossible. Vérifie la connexion et réessaie.');return}
+  await db.refresh('items');db.refresh('log');
+  const names=r.data.ok||[],fail=r.data.fail||[];
   sel.clear();render();
-  doneSheet('Sortie matériel bstudio.\n'+par+(projet?' · '+projet:'')+'\n'+names.map(n=>'• '+n).join('\n')+(retour?'\nRetour prévu : '+day(retour):''))};
-const doReturn=async(id,t)=>{const i=byId(id);if(!i)return false;
-  const s=(i.sorties||[]).find(x=>String(x.t)===String(t));if(!s)return false;
-  const ok=await w(()=>db.doc('items/'+id).update({sorties:(i.sorties||[]).filter(x=>x!==s)}));
-  if(ok)log('Retour : '+i.nom+(s.n>1?' ×'+s.n:'')+' (sorti par '+s.par+')');return ok};
-const retAll=async k=>{const[p,pr]=k.split('||'),m=s=>s.par===p&&(s.projet||'')===pr;
-  const js=items.filter(i=>(i.sorties||[]).some(m));
-  const res=await Promise.all(js.map(i=>w(()=>db.doc('items/'+i.id).update({sorties:i.sorties.filter(s=>!m(s))}))));
-  const names=js.filter((_,x)=>res[x]).map(i=>i.nom);
-  if(names.length){log('Retour complet de '+p+(pr?' ('+pr+')':'')+' : '+names.join(', '));toast('Tout est rendu.')}};
+  if(!names.length){close();toast('Sortie refusée : '+(fail.join(', ')||'matériel indisponible')+'.');return}
+  doneSheet('Sortie matériel bstudio.\n'+getMe()+(projet?' · '+projet:'')+'\n'+names.map(n=>'• '+n).join('\n')+(retour?'\nRetour prévu : '+day(retour):'')+(fail.length?'\nNon sortis : '+fail.join(', '):''))};
+const canRet=s=>!!me&&(me.admin||(!!s.ident&&s.ident===me.ident));
+const doReturn=async list=>{const r=await R('checkin_many',{p_list:list});
+  if(r.error||!r.data){toast('Enregistrement impossible. Vérifie la connexion et réessaie.');return false}
+  await db.refresh('items');db.refresh('log');
+  const n=(r.data.ok||[]).length;
+  if(!n){toast('Seule la personne qui a sorti ce matériel peut le rendre.');return false}
+  toast(n>1?n+' retours enregistrés.':'Retour enregistré.');return true};
+const retAll=async k=>{const[p,pr]=k.split('||'),list=[];
+  items.forEach(i=>(i.sorties||[]).forEach(s=>{if(s.par===p&&(s.projet||'')===pr&&canRet(s))list.push({id:i.id,t:s.t})}));
+  if(list.length)await doReturn(list)};
+let moves=[],team=[],who='*',beatOn=false;
+const dt=t=>t?new Date(t).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+const mvHtml=(l,sn)=>l.length?'<ul class="log">'+l.map(m=>'<li><b>'+esc(m.item_nom)+(m.n>1?' ×'+m.n:'')+'</b>'+(sn?' · '+esc(m.nom):'')+(m.projet?' · '+esc(m.projet):'')+'<time>Sorti le '+esc(dt(m.out_at))+(m.in_at?' · rendu le '+esc(dt(m.in_at))+(m.in_by&&m.in_by!==m.nom?' par '+esc(m.in_by):''):' · <span class="o">pas encore rendu</span>')+'</time></li>').join('')+'</ul>':'<p class="empty">Aucun mouvement pour le moment.</p>';
+const loadMoves=async()=>{const r=await R('my_moves',{p_ident:me&&me.admin?who:null});if(!r.error){moves=r.data||[];if(tab==='log')render()}};
+const loadTeam=async()=>{const r=await R('members');if(!r.error){team=r.data||[];if(tab==='team'||tab==='log')render()}};
+const online=m=>!!m.last_seen&&Date.now()-new Date(m.last_seen).getTime()<150000;
+const seen=m=>online(m)?'en ligne'+(m.platform?' ('+m.platform+')':''):m.last_seen?'vu le '+dt(m.last_seen)+(m.platform?' ('+m.platform+')':''):'jamais connecté';
+const plat=()=>{const C=window.Capacitor;return C&&C.isNativePlatform&&C.isNativePlatform()?'android':/iPhone|iPad/.test(navigator.userAgent)?'ios':'web'};
+const beat=()=>{if(!document.hidden&&me)Promise.resolve(R('ping',{p_platform:plat()})).catch(()=>{})};
+const beep=()=>{try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=beep.c||(beep.c=new A());if(c.state==='suspended')c.resume();[880,1175].forEach((f,k)=>{const o=c.createOscillator(),g=c.createGain();o.frequency.value=f;o.connect(g);g.connect(c.destination);const t0=c.currentTime+k*.16;g.gain.setValueAtTime(.0001,t0);g.gain.exponentialRampToValueAtTime(.25,t0+.02);g.gain.exponentialRampToValueAtTime(.0001,t0+.15);o.start(t0);o.stop(t0+.16)})}catch(e){}};
+const memberSheet=async id=>{const m=team.find(x=>x.ident===id);if(!m)return;
+  const cur=[];items.forEach(i=>(i.sorties||[]).forEach(s=>{if(s.ident===id)cur.push(esc(i.nom)+(s.n>1?' ×'+s.n:'')+(isLate(s)?'<span class="tag">Retard</span>':''))}));
+  open('<h3>'+esc(m.nom)+'</h3><p class="sub">'+esc(m.ident)+' · '+esc(seen(m))+'</p><h2>En main ('+cur.length+')</h2>'+(cur.length?'<ul class="log">'+cur.map(c=>'<li>'+c+'</li>').join('')+'</ul>':'<p class="sub">Rien en sortie.</p>')+'<h2>Historique</h2><div id="mH"><p class="sub">Chargement…</p></div><div class="acts"><button class="btn ghost" data-a="close">Fermer</button>'+(m.admin?'':'<button class="btn ghost" data-a="mtoggle" data-id="'+esc(m.ident)+'" data-on="'+(m.actif?1:0)+'">'+(m.actif?'Désactiver ce compte':'Réactiver ce compte')+'</button>')+'</div>');
+  const r=await R('my_moves',{p_ident:id});if(!r.error&&$('#mH'))$('#mH').innerHTML=mvHtml(r.data||[],false)};
 const doSave=async()=>{
   const nom=$('#fN').value.trim();if(!nom){toast('Donne un nom au matériel.');return}
   const d={nom,cat:$('#fC').value,qte:Math.max(1,+$('#fQ').value||1),etat:$('#fE').value,proprio:$('#fP').value.trim(),note:$('#fT').value.trim()};
@@ -285,7 +303,7 @@ const makeDb=()=>{
   const watch=(tb,next)=>{const first=!subs[tb];(subs[tb]=subs[tb]||[]).push(next);
     if(!first){if(cache[tb])next(snap(cache[tb]));return}
     retry(tb)};
-  let ch=null;try{ch=sb.channel('matos-sync',{config:{broadcast:{self:false}}});ch.on('broadcast',{event:'chg'},p=>{const t=p&&p.payload&&p.payload.tb;if(t&&subs[t])safe(t)}).subscribe()}catch(e){}
+  let ch=null;try{ch=sb.channel('matos-sync',{config:{broadcast:{self:false}}});ch.on('broadcast',{event:'chg'},p=>{const t=p&&p.payload&&p.payload.tb;if(t==='log'){beep();if(tab==='log')loadMoves()}if(t&&subs[t])safe(t)}).subscribe()}catch(e){}
   const ping=tb=>{try{ch&&ch.send({type:'broadcast',event:'chg',payload:{tb}})}catch(e){}};
   const all=()=>{if(!document.hidden)Object.keys(subs).forEach(safe)};
   setInterval(all,30000);document.addEventListener('visibilitychange',all);
@@ -295,13 +313,14 @@ const makeDb=()=>{
     set:async d=>{chk(await sb.from(tb).upsert({id,data:d}));await safe(tb);ping(tb)},
     update:async d=>{const c0=(cache[tb]||[]).find(r=>r.id===id);if(!c0)throw new Error('missing');chk(await sb.from(tb).update({data:{...c0.data,...d}}).eq('id',id));await safe(tb);ping(tb)},
     delete:async()=>{chk(await sb.from(tb).delete().eq('id',id));await safe(tb);ping(tb)}}};
-  return{collection:coll,doc}};
+  return{collection:coll,doc,refresh:tb=>{ping(tb);return safe(tb)}}};
 document.addEventListener('click',async e=>{
   if(e.target.id==='ov'){close();return}
   const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.tab){tab=b.dataset.tab;render();scrollTo(0,0);return}
+  if(b.dataset.tab){tab=b.dataset.tab;if(tab==='log'){loadMoves();if(me&&me.admin)loadTeam()}if(tab==='team')loadTeam();render();scrollTo(0,0);return}
   if('cat'in b.dataset){cat=b.dataset.cat;chips();render();return}
   if('mine'in b.dataset){mine=b.dataset.mine==='1';render();return}
+  if('who'in b.dataset){who=b.dataset.who;moves=[];render();loadMoves();return}
   if(b.dataset.kit){const k=kits.find(x=>x.id===b.dataset.kit);if(k)pickKit(k);return}
   const a=b.dataset.a,id=b.dataset.id;
   if(a==='new')itemSheet(null);
@@ -315,7 +334,7 @@ document.addEventListener('click',async e=>{
   else if(a==='close')close();
   else if(a==='go'){b.disabled=true;await doCheckout();b.disabled=false}
   else if(a==='save'){b.disabled=true;await doSave();b.disabled=false}
-  else if(a==='ret'){b.disabled=true;if(await doReturn(id,b.dataset.t)){toast('Retour enregistré.');close()}else b.disabled=false}
+  else if(a==='ret'){b.disabled=true;if(await doReturn([{id,t:+b.dataset.t}]))close();else b.disabled=false}
   else if(a==='retall'){b.disabled=true;await retAll(b.dataset.k)}
   else if(a==='copy'){const t=$('#waT');try{await navigator.clipboard.writeText(t.value);toast('Copié. Colle-le dans le groupe WhatsApp.')}catch(err){t.focus();t.select();toast('Sélectionné : appuie longuement puis « Copier ».')}}
   else if(a==='kitnew')open('<h3>Créer un kit</h3><p class="sub">'+[...sel.keys()].map(x=>esc((byId(x)||{}).nom||'')).join(', ')+'</p><label class="f">Nom du kit<input id="kN" placeholder="Ex. Kit interview, Kit podcast"></label><div class="acts"><button class="btn ghost" data-a="close">Annuler</button><button class="btn" data-a="kitsave">Enregistrer le kit</button></div>');
@@ -325,9 +344,10 @@ document.addEventListener('click',async e=>{
   else if(a==='authnew')authUI('new');
   else if(a==='authlogin')authUI('login');
   else if(a==='account')accountSheet();
+  else if(a==='member')memberSheet(id);
   else if(a==='pushon'){b.disabled=true;const ok=await pushInit(true);b.disabled=false;toast(ok?'Notifications activées sur ce téléphone.':'Notifications indisponibles ici. Sur iPhone : ajoute d\'abord l\'app à l\'écran d\'accueil, puis réessaie.')}
   else if(a==='logout'){b.disabled=true;await rpc({'x-session':getTok()},'logout');LS('matos-tok',null);LS('matos-me',null);location.reload()}
-  else if(a==='mtoggle'){b.disabled=true;await rpc({'x-session':getTok()},'set_active',{p_ident:id,p_actif:b.dataset.on!=='1'});accountSheet()}
+  else if(a==='mtoggle'){b.disabled=true;await rpc({'x-session':getTok()},'set_active',{p_ident:id,p_actif:b.dataset.on!=='1'});await loadTeam();close()}
   else if(a==='scanstop'){stopScan();tab='mat';render()}
   else if(a==='scanphoto'){stopScan();noLive=true;$('#cam').click()}
   else if(a==='kitdel'){if(await w(()=>db.doc('kits/'+id).delete())){kits=kits.filter(k=>k.id!==id);kitsSheet();render()}}
@@ -348,7 +368,7 @@ const LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k)||'';if(v===
 const rpc=(h,fn,args)=>supabase.createClient(MATOS.url,MATOS.key,{auth:{persistSession:false},global:{headers:h}}).rpc(fn,args);
 const fld=(id,label,type,extra)=>'<label class="f">'+label+'<input id="'+id+'" type="'+type+'" autocapitalize="off" autocomplete="off" '+(extra||'')+'></label>';
 const lockUI=(h,fn)=>{$('#lockB').innerHTML='<form id="lockF">'+h+'</form>';$('#lock').hidden=false;$('#lockF').onsubmit=async e=>{e.preventDefault();const b=$('#lockF button[type=submit]');b.disabled=true;try{await fn()}finally{b.disabled=false}}};
-const opened=async tok=>{const r=await rpc({'x-session':tok},'me');if(r.error)return null;const m=Array.isArray(r.data)?r.data[0]:r.data;if(!m||!m.ident)return false;LS('matos-tok',tok);LS('matos-me',m.nom);me=m;$('#lock').hidden=true;$('#who').textContent=m.nom;$('#who').hidden=false;start();pushInit(false);return true};
+const opened=async tok=>{const r=await rpc({'x-session':tok},'me');if(r.error)return null;const m=Array.isArray(r.data)?r.data[0]:r.data;if(!m||!m.ident)return false;LS('matos-tok',tok);LS('matos-me',m.nom);me=m;$('#lock').hidden=true;$('#who').textContent=m.nom;$('#who').hidden=false;$('#navT').hidden=!m.admin;start();pushInit(false);beat();if(!beatOn){beatOn=true;setInterval(beat,60000);document.addEventListener('visibilitychange',beat)}return true};
 const authUI=mode=>{clearTimeout(timer);
   if(mode==='new')lockUI('<h3>Créer mon compte</h3><p class="sub">Ton identifiant sera attaché à chaque sortie et à chaque retour.</p>'+fld('aN','Prénom et nom','text')+fld('aI','Identifiant (ex. tobi)','text')+fld('aP','Mot de passe (6 caractères minimum)','password')+fld('aC','Code d\'équipe','password','value="'+esc(LS('matos-code'))+'"')+'<button class="btn" type="submit">Créer mon compte</button><button class="btn ghost" type="button" data-a="authlogin">J\'ai déjà un compte</button>',async()=>{
     const nom=$('#aN').value.trim(),id=$('#aI').value.trim().toLowerCase(),p=$('#aP').value,c=$('#aC').value.trim();
@@ -374,7 +394,7 @@ const saveTok=(t,p)=>Promise.resolve(rpc({'x-session':getTok()},'save_push_token
 const pushInit=async ask=>{try{
   const C=window.Capacitor,N=C&&C.isNativePlatform&&C.isNativePlatform()&&C.Plugins&&C.Plugins.PushNotifications;
   if(N){let p=await N.checkPermissions();if(p.receive!=='granted')p=await N.requestPermissions();if(p.receive!=='granted')return false;
-    if(!pushOn){pushOn=true;N.addListener('registration',t=>saveTok(t.value,'android'));N.addListener('pushNotificationReceived',n=>toast(n.body||n.title||'Notification'))}
+    if(!pushOn){pushOn=true;N.addListener('registration',t=>saveTok(t.value,'android'));N.addListener('pushNotificationReceived',n=>{beep();toast(n.body||n.title||'Notification')})}
     await N.register();return true}
   if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))return false;
   if(Notification.permission==='default'){if(!ask)return false;if(await Notification.requestPermission()!=='granted')return false}
@@ -385,7 +405,7 @@ const pushInit=async ask=>{try{
   const m=firebase.messaging(),t=await m.getToken({vapidKey:VAPID,serviceWorkerRegistration:reg});
   if(!t)return false;
   await saveTok(t,/iPhone|iPad/.test(navigator.userAgent)?'ios':'web');
-  if(!pushOn){pushOn=true;m.onMessage(x=>toast((x.notification&&x.notification.body)||'Notification'))}
+  if(!pushOn){pushOn=true;m.onMessage(x=>{beep();toast((x.notification&&x.notification.body)||'Notification')})}
   return true}catch(e){return false}};
 const accountSheet=async()=>{open('<h3>'+esc(me?me.nom:'')+'</h3><p class="sub">Identifiant : '+esc(me?me.ident:'')+(me&&me.admin?' · administrateur':'')+'</p><div id="teamL"></div><button class="btn ghost" data-a="pushon">Activer les notifications sur ce téléphone</button><div class="acts"><button class="btn ghost" data-a="close">Fermer</button><button class="btn" data-a="logout">Se déconnecter</button></div>');
   const r=await rpc({'x-session':getTok()},'members');if(r.error||!$('#teamL'))return;
