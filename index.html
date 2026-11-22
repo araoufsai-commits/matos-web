@@ -325,6 +325,7 @@ document.addEventListener('click',async e=>{
   else if(a==='authnew')authUI('new');
   else if(a==='authlogin')authUI('login');
   else if(a==='account')accountSheet();
+  else if(a==='pushon'){b.disabled=true;const ok=await pushInit(true);b.disabled=false;toast(ok?'Notifications activées sur ce téléphone.':'Notifications indisponibles ici. Sur iPhone : ajoute d\'abord l\'app à l\'écran d\'accueil, puis réessaie.')}
   else if(a==='logout'){b.disabled=true;await rpc({'x-session':getTok()},'logout');LS('matos-tok',null);LS('matos-me',null);location.reload()}
   else if(a==='mtoggle'){b.disabled=true;await rpc({'x-session':getTok()},'set_active',{p_ident:id,p_actif:b.dataset.on!=='1'});accountSheet()}
   else if(a==='scanstop'){stopScan();tab='mat';render()}
@@ -347,7 +348,7 @@ const LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k)||'';if(v===
 const rpc=(h,fn,args)=>supabase.createClient(MATOS.url,MATOS.key,{auth:{persistSession:false},global:{headers:h}}).rpc(fn,args);
 const fld=(id,label,type,extra)=>'<label class="f">'+label+'<input id="'+id+'" type="'+type+'" autocapitalize="off" autocomplete="off" '+(extra||'')+'></label>';
 const lockUI=(h,fn)=>{$('#lockB').innerHTML='<form id="lockF">'+h+'</form>';$('#lock').hidden=false;$('#lockF').onsubmit=async e=>{e.preventDefault();const b=$('#lockF button[type=submit]');b.disabled=true;try{await fn()}finally{b.disabled=false}}};
-const opened=async tok=>{const r=await rpc({'x-session':tok},'me');if(r.error)return null;const m=Array.isArray(r.data)?r.data[0]:r.data;if(!m||!m.ident)return false;LS('matos-tok',tok);LS('matos-me',m.nom);me=m;$('#lock').hidden=true;$('#who').textContent=m.nom;$('#who').hidden=false;start();return true};
+const opened=async tok=>{const r=await rpc({'x-session':tok},'me');if(r.error)return null;const m=Array.isArray(r.data)?r.data[0]:r.data;if(!m||!m.ident)return false;LS('matos-tok',tok);LS('matos-me',m.nom);me=m;$('#lock').hidden=true;$('#who').textContent=m.nom;$('#who').hidden=false;start();pushInit(false);return true};
 const authUI=mode=>{clearTimeout(timer);
   if(mode==='new')lockUI('<h3>Créer mon compte</h3><p class="sub">Ton identifiant sera attaché à chaque sortie et à chaque retour.</p>'+fld('aN','Prénom et nom','text')+fld('aI','Identifiant (ex. tobi)','text')+fld('aP','Mot de passe (6 caractères minimum)','password')+fld('aC','Code d\'équipe','password','value="'+esc(LS('matos-code'))+'"')+'<button class="btn" type="submit">Créer mon compte</button><button class="btn ghost" type="button" data-a="authlogin">J\'ai déjà un compte</button>',async()=>{
     const nom=$('#aN').value.trim(),id=$('#aI').value.trim().toLowerCase(),p=$('#aP').value,c=$('#aC').value.trim();
@@ -366,7 +367,27 @@ const authUI=mode=>{clearTimeout(timer);
     if(r.error){toast('Connexion impossible, réessaie.');return}
     if(!r.data){toast('Identifiant ou mot de passe incorrect.');return}
     await opened(r.data)})};
-const accountSheet=async()=>{open('<h3>'+esc(me?me.nom:'')+'</h3><p class="sub">Identifiant : '+esc(me?me.ident:'')+(me&&me.admin?' · administrateur':'')+'</p><div id="teamL"></div><div class="acts"><button class="btn ghost" data-a="close">Fermer</button><button class="btn" data-a="logout">Se déconnecter</button></div>');
+const FB={apiKey:'AIzaSyCipmXJnDNTG8_Fm-bhKeP8dOykWdhRChg',projectId:'matos-bstudio',messagingSenderId:'250906419388',appId:'1:250906419388:web:952a1f29a7dcae43a170b9'};
+const VAPID='BF8jQ7ZbTweCZNsuyTwhe04Dz-VTSNuEVCA-7DWr0XL5X6rRAMa1sZDOtvJglxpI3FgRDiNSbKEAannmGt2hOqU';
+let pushOn=false;
+const saveTok=(t,p)=>Promise.resolve(rpc({'x-session':getTok()},'save_push_token',{p_token:t,p_platform:p})).catch(()=>{});
+const pushInit=async ask=>{try{
+  const C=window.Capacitor,N=C&&C.isNativePlatform&&C.isNativePlatform()&&C.Plugins&&C.Plugins.PushNotifications;
+  if(N){let p=await N.checkPermissions();if(p.receive!=='granted')p=await N.requestPermissions();if(p.receive!=='granted')return false;
+    if(!pushOn){pushOn=true;N.addListener('registration',t=>saveTok(t.value,'android'));N.addListener('pushNotificationReceived',n=>toast(n.body||n.title||'Notification'))}
+    await N.register();return true}
+  if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))return false;
+  if(Notification.permission==='default'){if(!ask)return false;if(await Notification.requestPermission()!=='granted')return false}
+  if(Notification.permission!=='granted')return false;
+  await lib('firebase-app-compat.js');await lib('firebase-messaging-compat.js');
+  if(!firebase.apps.length)firebase.initializeApp(FB);
+  const reg=await navigator.serviceWorker.register('firebase-messaging-sw.js');
+  const m=firebase.messaging(),t=await m.getToken({vapidKey:VAPID,serviceWorkerRegistration:reg});
+  if(!t)return false;
+  await saveTok(t,/iPhone|iPad/.test(navigator.userAgent)?'ios':'web');
+  if(!pushOn){pushOn=true;m.onMessage(x=>toast((x.notification&&x.notification.body)||'Notification'))}
+  return true}catch(e){return false}};
+const accountSheet=async()=>{open('<h3>'+esc(me?me.nom:'')+'</h3><p class="sub">Identifiant : '+esc(me?me.ident:'')+(me&&me.admin?' · administrateur':'')+'</p><div id="teamL"></div><button class="btn ghost" data-a="pushon">Activer les notifications sur ce téléphone</button><div class="acts"><button class="btn ghost" data-a="close">Fermer</button><button class="btn" data-a="logout">Se déconnecter</button></div>');
   const r=await rpc({'x-session':getTok()},'members');if(r.error||!$('#teamL'))return;
   $('#teamL').innerHTML='<h2>Équipe</h2>'+(r.data||[]).map(m=>'<div class="pick"><span>'+esc(m.nom)+'<br><span class="sub">'+esc(m.ident)+(m.admin?' · admin':'')+(m.actif?'':' · désactivé')+'</span></span>'+(me&&me.admin&&m.ident!==me.ident?'<button class="del" data-a="mtoggle" data-id="'+esc(m.ident)+'" data-on="'+(m.actif?1:0)+'">'+(m.actif?'Désactiver':'Réactiver')+'</button>':'')+'</div>').join('')};
 const gate=async()=>{
