@@ -76,11 +76,12 @@ label.f textarea{height:76px;padding:10px 12px;resize:vertical}textarea.msg{heig
 .del{color:var(--red);font-weight:600;height:44px}
 .qr{display:flex;gap:12px;align-items:center;font-size:13px;color:var(--mut);min-height:112px}.qr svg{flex:none;width:112px;height:112px;background:#fff;border-radius:8px}
 #scanv{position:fixed;inset:0;z-index:8;background:#000}#vid{width:100%;height:100%;object-fit:cover}.aim{position:absolute;left:50%;top:42%;width:62vw;max-width:300px;aspect-ratio:1;transform:translate(-50%,-50%);border:3px solid #fff;border-radius:18px;box-shadow:0 0 0 100vmax #0006}.scanbar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:8px;padding:14px 12px 22px;background:#231F20}.scanbar .btn{flex:1}.scanbar .ghost{color:#fff;border-color:#666}
-#lock{position:fixed;inset:0;z-index:7;background:var(--bg);display:grid;place-items:center;padding:24px}#lock form{display:grid;gap:12px;width:100%;max-width:360px}#lock h3{margin:0;font-size:22px;font-weight:700}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}#who{flex:none;color:#F1EEEC;font-size:13px;font-weight:600;border:1px solid #666;border-radius:18px;height:36px;padding:0 12px;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#lock{position:fixed;inset:0;z-index:7;background:var(--bg);display:grid;place-items:center;padding:24px;overflow-y:auto}#lock form{display:grid;gap:12px;width:100%;max-width:360px}#lock h3{margin:0;font-size:22px;font-weight:700}
 #toast{position:fixed;left:12px;right:12px;bottom:140px;z-index:9;background:#231F20;color:#fff;border-radius:12px;padding:12px 14px;text-align:center;font-size:14px;border:1px solid var(--red)}
 @media(prefers-reduced-motion:no-preference){#sheet{animation:up .16s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.4}}}
 </style></head><body>
-<header><h1>matos bstudio<i>.</i></h1>
+<header><div class="top"><h1>matos bstudio<i>.</i></h1><button id="who" data-a="account" hidden></button></div>
 <div class="stats"><button data-tab="mat"><b id="sD">–</b><span>Disponibles</span></button><button data-tab="out"><b id="sO">–</b><span>Sortis</span></button><button data-tab="pan" class="warn"><b id="sP">–</b><span>À traiter</span></button></div>
 <button id="alert" data-tab="out" hidden></button></header>
 <main>
@@ -91,7 +92,7 @@ label.f textarea{height:76px;padding:10px 12px;resize:vertical}textarea.msg{heig
 <nav><button data-tab="mat" class="on">Matériel</button><button data-tab="out">Sorties</button><button data-tab="pan">Pannes</button><button data-tab="log">Journal</button></nav>
 <div id="ov" hidden><div id="sheet" role="dialog" aria-modal="true"></div></div>
 <div id="scanv" hidden><video id="vid" playsinline muted></video><div class="aim"></div><div class="scanbar"><button class="btn ghost" data-a="scanphoto">Par photo</button><button class="btn" data-a="scanstop">Terminer</button></div></div>
-<div id="lock" hidden><form id="lockF"><h3 id="lockT"></h3><p class="sub" id="lockS"></p><label class="f">Code d'équipe<input id="lockI" type="password" autocomplete="off" autocapitalize="off"></label><button class="btn" type="submit">Valider</button></form></div>
+<div id="lock" hidden><div id="lockB" style="width:100%;max-width:360px"></div></div>
 <div id="toast" hidden role="status"></div>
 <script src="supabase.js"></script>
 <script src="config.js"></script>
@@ -107,7 +108,7 @@ let db=null,items=[],kits=[],logs=[],logOn=false,tab='mat',cat='',mine=false,rea
 const sel=new Map();
 const outN=i=>(i.sorties||[]).reduce((a,s)=>a+(+s.n||0),0);
 const dispo=i=>Math.max(0,(+i.qte||1)-outN(i));
-const usable=i=>i.etat!=='hs'&&i.etat!=='perdu';
+const usable=i=>!i.etat||i.etat==='ok';
 const byId=id=>items.find(i=>i.id===id);
 const when=t=>new Date(t).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 const day=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
@@ -182,7 +183,7 @@ const outSheet=i=>open('<h3>'+esc(i.nom)+'</h3>'
 const checkoutSheet=()=>{const rec=[...new Set(items.flatMap(i=>(i.sorties||[]).map(s=>s.projet)).filter(Boolean).concat(PROJ))];
   open('<h3>Sortie de matériel</h3>'
   +[...sel].map(([id,n])=>{const i=byId(id);if(!i)return'';const m=dispo(i);return '<div class="pick"><span>'+esc(i.nom)+'</span>'+(m>1?'<input type="number" min="1" max="'+m+'" value="'+Math.min(n,m)+'" data-q="'+esc(id)+'" inputmode="numeric" aria-label="Quantité de '+esc(i.nom)+'">':'')+'</div>'}).join('')
-  +'<label class="f">Qui sort le matériel ?<input id="cW" list="team" value="'+esc(getMe())+'" placeholder="Ton prénom"><datalist id="team">'+TEAM.map(t=>'<option value="'+esc(t)+'">').join('')+'</datalist></label>'
+  +'<label class="f">Sortie au nom de<input id="cW" value="'+esc(getMe())+'" readonly></label>'
   +'<label class="f">Tournage ou client<input id="cP" list="proj" placeholder="Ex. Tawsil, AQS, location externe"><datalist id="proj">'+rec.map(t=>'<option value="'+esc(t)+'">').join('')+'</datalist></label>'
   +'<label class="f">Retour prévu (facultatif)<input id="cR" type="date"></label>'
   +'<div class="acts"><button class="btn ghost" data-a="close">Annuler</button><button class="btn" data-a="go">Valider la sortie</button></div>')};
@@ -195,7 +196,7 @@ const doCheckout=async()=>{
   setMe(par);const t=Date.now();
   document.querySelectorAll('[data-q]').forEach(e=>sel.set(e.dataset.q,Math.max(1,+e.value||1)));
   const jobs=[...sel].map(([id,n0])=>{const i=byId(id);if(!i)return null;const n=Math.min(n0,dispo(i));if(n<1)return null;return{i,n}}).filter(Boolean);
-  const res=await Promise.all(jobs.map(({i,n})=>w(()=>db.doc('items/'+i.id).update({sorties:[...(i.sorties||[]),retour?{par,projet,n,t,retour}:{par,projet,n,t}]}))));
+  const res=await Promise.all(jobs.map(({i,n})=>w(()=>db.doc('items/'+i.id).update({sorties:[...(i.sorties||[]),retour?{par,projet,n,t,retour,ident:me&&me.ident}:{par,projet,n,t,ident:me&&me.ident}]}))));
   const names=jobs.filter((_,k)=>res[k]).map(({i,n})=>i.nom+(n>1?' ×'+n:''));
   if(!names.length)return;
   log('Sortie par '+par+(projet?' pour '+projet:'')+' : '+names.join(', '));
@@ -274,7 +275,7 @@ document.querySelector('.scan').addEventListener('click',e=>{
   liveScan().then(ok=>{if(!ok){noLive=true;toast('Caméra indisponible. Touche encore le bouton pour scanner par photo.')}})});
 const makeDb=()=>{
   if(!window.supabase||!window.MATOS||!MATOS.url)return null;
-  const sb=supabase.createClient(MATOS.url,MATOS.key,{auth:{persistSession:false},global:{headers:{'x-team-code':getCode()}}});
+  const sb=supabase.createClient(MATOS.url,MATOS.key,{auth:{persistSession:false},global:{headers:{'x-session':getTok()}}});
   const subs={},cache={};
   const snap=rows=>({docs:rows.map(r=>({id:String(r.id),data:()=>r.data||{t:r.t,txt:r.txt,par:r.par}}))});
   const load=async tb=>{const r=await(tb==='log'?sb.from('log').select('*').order('t',{ascending:false}).limit(80):sb.from(tb).select('*'));
@@ -321,6 +322,11 @@ document.addEventListener('click',async e=>{
   else if(a==='kitsave'){const nom=$('#kN').value.trim();if(!nom){toast('Donne un nom au kit.');return}
     b.disabled=true;if(await w(()=>db.doc('kits/'+slug(nom)).set({nom,ids:[...sel.keys()]}))){close();toast('Kit « '+nom+' » enregistré.')}else b.disabled=false}
   else if(a==='kits')kitsSheet();
+  else if(a==='authnew')authUI('new');
+  else if(a==='authlogin')authUI('login');
+  else if(a==='account')accountSheet();
+  else if(a==='logout'){b.disabled=true;await rpc({'x-session':getTok()},'logout');LS('matos-tok',null);LS('matos-me',null);location.reload()}
+  else if(a==='mtoggle'){b.disabled=true;await rpc({'x-session':getTok()},'set_active',{p_ident:id,p_actif:b.dataset.on!=='1'});accountSheet()}
   else if(a==='scanstop'){stopScan();tab='mat';render()}
   else if(a==='scanphoto'){stopScan();noLive=true;$('#cam').click()}
   else if(a==='kitdel'){if(await w(()=>db.doc('kits/'+id).delete())){kits=kits.filter(k=>k.id!==id);kitsSheet();render()}}
@@ -330,24 +336,47 @@ document.addEventListener('click',async e=>{
 $('#q').addEventListener('input',()=>{clearTimeout(qT);qT=setTimeout(render,120)});
 chips();render();
 const timer=setTimeout(()=>{if(!ready){msg='La base est injoignable pour le moment. Vérifie ta connexion internet.';render()}},10000);
-const getCode=()=>{try{return localStorage.getItem('matos-code')||''}catch(e){return''}};
+const getTok=()=>{try{return localStorage.getItem('matos-tok')||''}catch(e){return''}};let me=null;
 const start=()=>{db=makeDb();
 if(!db){clearTimeout(timer);msg='Configuration de la base manquante.';render()}
 else{
   db.collection('items').onSnapshot(s=>{items=s.docs.map(d=>({id:d.id,...d.data()}));ready=true;clearTimeout(timer);for(const id of[...sel.keys()]){const i=byId(id);if(!i||!usable(i)||dispo(i)<1)sel.delete(id)}render()});
   db.collection('kits').onSnapshot(s=>{kits=s.docs.map(d=>({id:d.id,...d.data()}));if(ready)render()});
 }};
-const lock=(t,s,fn)=>{$('#lockT').textContent=t;$('#lockS').textContent=s;$('#lockI').value='';$('#lock').hidden=false;$('#lockF').onsubmit=async e=>{e.preventDefault();const v=$('#lockI').value.trim();if(!/^[!-~]{6,}$/.test(v)){toast('Au moins 6 caractères : lettres sans accent, chiffres ou symboles, sans espace.');return}await fn(v)}};
-const rpc=(code,fn,args)=>supabase.createClient(MATOS.url,MATOS.key,{auth:{persistSession:false},global:{headers:{'x-team-code':code}}}).rpc(fn,args);
-const enter=async v=>{const r=await rpc(v,'team_ok');if(r.error){toast('Connexion impossible, réessaie.');return}if(!r.data){toast('Code incorrect.');return}try{localStorage.setItem('matos-code',v)}catch(e){}$('#lock').hidden=true;start()};
+const LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k)||'';if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}return''};
+const rpc=(h,fn,args)=>supabase.createClient(MATOS.url,MATOS.key,{auth:{persistSession:false},global:{headers:h}}).rpc(fn,args);
+const fld=(id,label,type,extra)=>'<label class="f">'+label+'<input id="'+id+'" type="'+type+'" autocapitalize="off" autocomplete="off" '+(extra||'')+'></label>';
+const lockUI=(h,fn)=>{$('#lockB').innerHTML='<form id="lockF">'+h+'</form>';$('#lock').hidden=false;$('#lockF').onsubmit=async e=>{e.preventDefault();const b=$('#lockF button[type=submit]');b.disabled=true;try{await fn()}finally{b.disabled=false}}};
+const opened=async tok=>{const r=await rpc({'x-session':tok},'me');if(r.error)return null;const m=Array.isArray(r.data)?r.data[0]:r.data;if(!m||!m.ident)return false;LS('matos-tok',tok);LS('matos-me',m.nom);me=m;$('#lock').hidden=true;$('#who').textContent=m.nom;$('#who').hidden=false;start();return true};
+const authUI=mode=>{clearTimeout(timer);
+  if(mode==='new')lockUI('<h3>Créer mon compte</h3><p class="sub">Ton identifiant sera attaché à chaque sortie et à chaque retour.</p>'+fld('aN','Prénom et nom','text')+fld('aI','Identifiant (ex. tobi)','text')+fld('aP','Mot de passe (6 caractères minimum)','password')+fld('aC','Code d\'équipe','password','value="'+esc(LS('matos-code'))+'"')+'<button class="btn" type="submit">Créer mon compte</button><button class="btn ghost" type="button" data-a="authlogin">J\'ai déjà un compte</button>',async()=>{
+    const nom=$('#aN').value.trim(),id=$('#aI').value.trim().toLowerCase(),p=$('#aP').value,c=$('#aC').value.trim();
+    if(nom.length<2){toast('Indique ton prénom et ton nom.');return}
+    if(!/^[a-z0-9._-]{3,20}$/.test(id)){toast('Identifiant : 3 à 20 caractères, minuscules, chiffres, point ou tiret.');return}
+    if(p.length<6){toast('Mot de passe : 6 caractères minimum.');return}
+    if(!/^[!-~]+$/.test(c)){toast('Saisis le code d\'équipe.');return}
+    const r=await rpc({'x-team-code':c},'signup',{p_ident:id,p_nom:nom,p_pass:p});
+    if(r.error){toast('Connexion impossible, réessaie.');return}
+    if(r.data==='code'){toast('Code d\'équipe incorrect.');return}
+    if(r.data==='taken'){toast('Cet identifiant est déjà pris.');return}
+    if(!r.data||r.data.length<20){toast('Création impossible, vérifie les champs.');return}
+    LS('matos-code',null);await opened(r.data)});
+  else lockUI('<h3>Connexion</h3>'+fld('aI','Identifiant','text')+fld('aP','Mot de passe','password')+'<button class="btn" type="submit">Se connecter</button><button class="btn ghost" type="button" data-a="authnew">Créer mon compte</button>',async()=>{
+    const r=await rpc({},'login',{p_ident:$('#aI').value.trim().toLowerCase(),p_pass:$('#aP').value});
+    if(r.error){toast('Connexion impossible, réessaie.');return}
+    if(!r.data){toast('Identifiant ou mot de passe incorrect.');return}
+    await opened(r.data)})};
+const accountSheet=async()=>{open('<h3>'+esc(me?me.nom:'')+'</h3><p class="sub">Identifiant : '+esc(me?me.ident:'')+(me&&me.admin?' · administrateur':'')+'</p><div id="teamL"></div><div class="acts"><button class="btn ghost" data-a="close">Fermer</button><button class="btn" data-a="logout">Se déconnecter</button></div>');
+  const r=await rpc({'x-session':getTok()},'members');if(r.error||!$('#teamL'))return;
+  $('#teamL').innerHTML='<h2>Équipe</h2>'+(r.data||[]).map(m=>'<div class="pick"><span>'+esc(m.nom)+'<br><span class="sub">'+esc(m.ident)+(m.admin?' · admin':'')+(m.actif?'':' · désactivé')+'</span></span>'+(me&&me.admin&&m.ident!==me.ident?'<button class="del" data-a="mtoggle" data-id="'+esc(m.ident)+'" data-on="'+(m.actif?1:0)+'">'+(m.actif?'Désactiver':'Réactiver')+'</button>':'')+'</div>').join('')};
 const gate=async()=>{
-  if(!window.supabase||!window.MATOS){start();return}
-  const h=await rpc('','has_code');
+  if(!window.supabase||!window.MATOS){clearTimeout(timer);msg='Configuration de la base manquante.';render();return}
+  const h=await rpc({},'has_code');
   if(h.error){setTimeout(gate,4000);return}
-  if(!h.data){clearTimeout(timer);lock('Crée le code d\'équipe','Premier lancement : choisis le code que toute l\'équipe devra saisir.',async v=>{const r=await rpc(v,'set_code',{new_code:v});if(r.error||!r.data){toast('Création impossible, réessaie.');gate();return}await enter(v)});return}
-  const c=getCode();
-  if(c){const r=await rpc(c,'team_ok');if(r.error){setTimeout(gate,4000);return}if(r.data){start();return}}
-  clearTimeout(timer);lock('Code d\'équipe','Demande le code à lwex ou à Lina.',enter)};
+  if(!h.data){clearTimeout(timer);lockUI('<h3>Crée le code d\'équipe</h3><p class="sub">Premier lancement : choisis le code d\'invitation que chaque membre saisira pour créer son compte.</p>'+fld('aC','Code d\'équipe','password')+'<button class="btn" type="submit">Valider</button>',async()=>{const v=$('#aC').value.trim();if(!/^[!-~]{6,}$/.test(v)){toast('Au moins 6 caractères : lettres sans accent, chiffres ou symboles, sans espace.');return}const r=await rpc({},'set_code',{new_code:v});if(r.error||!r.data){toast('Création impossible, réessaie.');gate();return}LS('matos-code',v);authUI('new')});return}
+  const t=LS('matos-tok');
+  if(t){const o=await opened(t);if(o===null){setTimeout(gate,4000);return}if(o)return;LS('matos-tok',null)}
+  authUI('login')};
 gate();
 }
 </script></body></html>
