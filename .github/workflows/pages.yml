@@ -22,12 +22,13 @@ jobs:
           node-version: 20
       - name: Build site
         run: |
-          npm install --no-save jsqr@1.4.0 qrcode-generator@1.4.4 @supabase/supabase-js@2.45.4
+          npm install --no-save jsqr@1.4.0 qrcode-generator@1.4.4 @supabase/supabase-js@2.45.4 firebase@10.14.1
           mkdir site
-          cp index.html config.js manifest.webmanifest site/
+          cp index.html config.js manifest.webmanifest firebase-messaging-sw.js site/
           cp node_modules/jsqr/dist/jsQR.js site/jsqr.js
           cp node_modules/qrcode-generator/qrcode.js site/qrgen.js
           cp node_modules/@supabase/supabase-js/dist/umd/*.js site/
+          cp node_modules/firebase/firebase-app-compat.js node_modules/firebase/firebase-messaging-compat.js site/
           pip install pillow
           python3 - <<'EOF'
           from PIL import Image
